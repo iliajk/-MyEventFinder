@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/MyEventFinder # Укажите правильный URL
+    username: postgres # Укажите имя пользователя
+    password: z6628241 # Укажите пароль
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # Опционально: автоматическое обновление схемы
+    show-sql: true # Опционально: показывать SQL-запросы в логах
+  application:
+    name: MyEventFinder
