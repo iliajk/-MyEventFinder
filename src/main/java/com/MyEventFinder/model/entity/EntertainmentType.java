@@ -8,7 +8,7 @@ import java.util.List;
 @Entity
 @Data
 @Table(name = "entertainmentType")
-public class EntertainmentType {
+public class EntertainmentType extends AbstractEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,4 +19,5 @@ public class EntertainmentType {
 
     @OneToMany(mappedBy = "type", cascade = CascadeType.PERSIST)
     private List<Entertainment> entertainments;
+
 }

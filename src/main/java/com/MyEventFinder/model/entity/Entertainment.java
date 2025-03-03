@@ -1,7 +1,10 @@
 package com.MyEventFinder.model.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,13 +14,16 @@ import java.util.List;
 @Entity
 @Data
 @Table(name = "entertainment")
-public class Entertainment {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Entertainment extends AbstractEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String title;
 
     @Column(nullable = false)
     private String description;

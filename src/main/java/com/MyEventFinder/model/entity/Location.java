@@ -8,7 +8,7 @@ import java.util.List;
 @Entity
 @Data
 @Table(name = "location")
-public class Location {
+public class Location extends AbstractEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
