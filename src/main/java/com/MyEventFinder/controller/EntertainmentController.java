@@ -27,12 +27,12 @@ public class EntertainmentController {
         return entertainmentService.getEntertainmentById(id);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    @RequestMapping(path = "/{id}", method = RequestMethod.PUT)
     public ResponseEntity<?> updateEntertainment(@PathVariable Long id, @RequestBody EntertainmentDTO dto) {
         return entertainmentService.updateEntertainment(id, dto);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(path = "/{id}")
     public ResponseEntity<?> deleteEntertainment(@PathVariable Long id) {
         return entertainmentService.deleteEntertainment(id);
     }

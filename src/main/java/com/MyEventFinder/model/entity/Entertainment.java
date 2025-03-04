@@ -29,7 +29,7 @@ public class Entertainment extends AbstractEntity{
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "type_id", nullable = false)
+    @JoinColumn(name = "type_id")
     private EntertainmentType type;
 
     @ManyToOne

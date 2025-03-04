@@ -10,10 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.Currency;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,60 +19,50 @@ public class EntertainmentService {
     private final EntertainmentRepository entRepo;
 
     public ResponseEntity<?> getAllEntertainments() {
-        List<Entertainment> ents = entRepo.findAll();
+        List<Entertainment> ents = entRepo.getAllByDeleted(false);
         return ResponseEntity.ok().body(ents);
     }
 
-    public ResponseEntity<?> createEntertainment(EntertainmentDTO ent) {
-        try {
-            Entertainment newEnt = Entertainment.builder()
-                    .title(ent.getTitle())
-                    .description(ent.getDescription())
-                    .date(LocalDateTime.parse(ent.getDate()))
-                    .price(BigDecimal.valueOf(Long.parseLong(ent.getPrice())))
-                    .currency(Currency.getInstance(ent.getCurrency()))
-                    .build();
-            Entertainment entertainment = entRepo.save(newEnt);
-            newEnt.setId(entertainment.getId());
-            return ResponseEntity.status(HttpStatus.CREATED).body(newEnt);
-        } catch (RuntimeException runtimeException) {
-            System.out.println(runtimeException.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(runtimeException.getMessage());
+    public ResponseEntity<?> createEntertainment(EntertainmentDTO entDTO) {
+        Entertainment newEnt;
+        if (entDTO == null) {
+            return ResponseEntity.badRequest().body("Entertainment cannot be null!");
         }
+        try {
+            newEnt = EntertainmentDTO.toNewEntertainment(entDTO);
+        } catch (RuntimeException runtimeException) {
+            return ResponseEntity.badRequest().body(runtimeException.getMessage());
+        }
+        newEnt = entRepo.save(newEnt);
+        entDTO = EntertainmentDTO.toDTO(newEnt);
+        return ResponseEntity.status(HttpStatus.CREATED).body(entDTO);
     }
 
     public ResponseEntity<?> getEntertainmentById(Long id) {
         Entertainment entertainment = entRepo.findById(id).orElse(null);
         if (entertainment != null) {
-            return ResponseEntity.ok().body(EntertainmentDTO.builder()
-                    .id(entertainment.getId())
-                    .title(entertainment.getTitle())
-                    .description(entertainment.getDescription())
-                    .price(dto.getPrice())
-                    .currency(dto.getCurrency())
-                    .date(dto.getDate())
-                    .build());
+            return ResponseEntity.ok().body(EntertainmentDTO.toDTO(entertainment));
         }
-        return ResponseEntity.ok().body(entRepo.findById(id));
+        return ResponseEntity.badRequest().body("Entertainment not found");
     }
 
     public ResponseEntity<?> updateEntertainment(Long id, EntertainmentDTO dto) {
         Entertainment existingEnt = entRepo.findById(id).orElse(null);
-        if (existingEnt != null) {
-            if (dto.getTitle() != null) {
+        if (existingEnt != null && dto != null) {
+            if (dto.getTitle() != null && !dto.getTitle().isEmpty()) {
                 existingEnt.setTitle(dto.getTitle());
             }
-            if (dto.getDescription() != null) {
+            if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
                 existingEnt.setDescription(dto.getDescription());
             }
             try {
-                if (dto.getDate() != null) {
+                if (dto.getDate() != null && !dto.getDate().isEmpty()) {
                     existingEnt.setDate(LocalDateTime.parse(dto.getDate()));
                 }
-                if (dto.getPrice() != null) {
-                    existingEnt.setPrice(BigDecimal.valueOf(Long.parseLong(dto.getPrice())));
+                if (dto.getPrice() != null && !dto.getPrice().isEmpty()) {
+                    existingEnt.setPrice(BigDecimal.valueOf(Double.parseDouble(dto.getPrice())));
                 }
-                if (dto.getCurrency() != null) {
+                if (dto.getCurrency() != null && !dto.getCurrency().isEmpty()) {
                     existingEnt.setCurrency(Currency.getInstance(dto.getCurrency()));
                 }
             } catch (RuntimeException runtimeException) {
@@ -82,25 +70,20 @@ public class EntertainmentService {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(runtimeException.getMessage());
             }
             existingEnt = entRepo.save(existingEnt);
-            return ResponseEntity.ok().body(EntertainmentDTO.builder()
-                    .id(existingEnt.getId())
-                    .title(existingEnt.getTitle())
-                    .description(existingEnt.getDescription())
-                    .price(dto.getPrice())
-                    .currency(dto.getCurrency())
-                    .date(dto.getDate())
-                    .build());
+            return ResponseEntity.ok().body(EntertainmentDTO.toDTO(existingEnt));
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().body("Entertainment not found");
         }
     }
 
     public ResponseEntity<?> deleteEntertainment(Long id) {
         Entertainment existingEnt = entRepo.findById(id).orElse(null);
-        if(existingEnt != null) {
+        if (existingEnt != null) {
             existingEnt.setDeleted(true);
             existingEnt.setDeleted_at(LocalDateTime.now());
             existingEnt = entRepo.save(existingEnt);
+            return ResponseEntity.ok().body("Entertainment with id = " + id + " was deleted");
         }
+        return ResponseEntity.badRequest().body("Entertainment not found");
     }
 }
