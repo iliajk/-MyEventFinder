@@ -2,7 +2,13 @@ package com.MyEventFinder.service;
 
 import com.MyEventFinder.model.DTO.EntertainmentDTO;
 import com.MyEventFinder.model.entity.Entertainment;
+import com.MyEventFinder.model.entity.EntertainmentType;
+import com.MyEventFinder.model.entity.Location;
+import com.MyEventFinder.model.entity.User;
 import com.MyEventFinder.repository.EntertainmentRepository;
+import com.MyEventFinder.repository.EntertainmentTypeRepository;
+import com.MyEventFinder.repository.LocationRepository;
+import com.MyEventFinder.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,13 +16,18 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class EntertainmentService {
     private final EntertainmentRepository entRepo;
+    private final EntertainmentTypeRepository entTypeRepo;
+    private final LocationRepository locationRepo;
+    private final UserRepository userRepo;
 
     public ResponseEntity<?> getAllEntertainments() {
         List<Entertainment> ents = entRepo.getAllByDeleted(false);
@@ -29,19 +40,19 @@ public class EntertainmentService {
             return ResponseEntity.badRequest().body("Entertainment cannot be null!");
         }
         try {
-            newEnt = EntertainmentDTO.toNewEntertainment(entDTO);
+            newEnt = createNewEntertainment(entDTO);
         } catch (RuntimeException runtimeException) {
             return ResponseEntity.badRequest().body(runtimeException.getMessage());
         }
         newEnt = entRepo.save(newEnt);
-        entDTO = EntertainmentDTO.toDTO(newEnt);
+        entDTO = toDTO(newEnt);
         return ResponseEntity.status(HttpStatus.CREATED).body(entDTO);
     }
 
     public ResponseEntity<?> getEntertainmentById(Long id) {
         Entertainment entertainment = entRepo.findById(id).orElse(null);
         if (entertainment != null) {
-            return ResponseEntity.ok().body(EntertainmentDTO.toDTO(entertainment));
+            return ResponseEntity.ok().body(toDTO(entertainment));
         }
         return ResponseEntity.badRequest().body("Entertainment not found");
     }
@@ -70,7 +81,7 @@ public class EntertainmentService {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(runtimeException.getMessage());
             }
             existingEnt = entRepo.save(existingEnt);
-            return ResponseEntity.ok().body(EntertainmentDTO.toDTO(existingEnt));
+            return ResponseEntity.ok().body(toDTO(existingEnt));
         } else {
             return ResponseEntity.badRequest().body("Entertainment not found");
         }
@@ -81,9 +92,67 @@ public class EntertainmentService {
         if (existingEnt != null) {
             existingEnt.setDeleted(true);
             existingEnt.setDeleted_at(LocalDateTime.now());
-            existingEnt = entRepo.save(existingEnt);
+            entRepo.save(existingEnt);
             return ResponseEntity.ok().body("Entertainment with id = " + id + " was deleted");
         }
         return ResponseEntity.badRequest().body("Entertainment not found");
+    }
+    // transfer from Entertainment to Dto
+    private EntertainmentDTO toDTO(Entertainment entity) {
+        if (entity != null) {
+            return EntertainmentDTO.builder()
+                    .id(entity.getId())
+                    .title(entity.getTitle())
+                    .description(entity.getDescription())
+                    .price(entity.getPrice().toString())
+                    .currency(entity.getCurrency().toString())
+                    .date(entity.getDate().toString())
+                    .build();
+        }
+        return null;
+    }
+    // create entertainment from DTO
+    private Entertainment createNewEntertainment(EntertainmentDTO dto) throws RuntimeException {
+        if(dto != null) {
+            EntertainmentType type = null;
+            Location location = null;
+            List<User> executors = null;
+            User customer = null;
+
+            Long typeId = dto.getTypeId();
+            Long locationId = dto.getLocationId();
+            Long customerId = dto.getCustomerId();
+            Long[] executorIds = dto.getExecutorIds();
+
+            if(typeId != null) {
+                type = entTypeRepo.findById(typeId).orElse(null);
+            }
+            if(locationId != null) {
+                location = locationRepo.findById(locationId).orElse(null);
+            }
+            if(customerId != null) {
+                customer = userRepo.findById(customerId).orElse(null);
+            }
+            if(executorIds != null) {
+                executors = new ArrayList<>(userRepo.findAllById(Stream.of(executorIds).toList()));
+            }
+            try {
+                return Entertainment.builder()
+                        .title(dto.getTitle())
+                        .description(dto.getDescription())
+                        .date(LocalDateTime.parse(dto.getDate()))
+                        .price(BigDecimal.valueOf(Double.parseDouble(dto.getPrice())))
+                        .currency(Currency.getInstance(dto.getCurrency()))
+                        .type(type)
+                        .location(location)
+                        .customer(customer)
+                        .executors(executors)
+                        .build();
+            } catch (RuntimeException runtimeException) {
+                System.out.println(runtimeException.getMessage());
+                throw runtimeException;
+            }
+        }
+        return null;
     }
 }
