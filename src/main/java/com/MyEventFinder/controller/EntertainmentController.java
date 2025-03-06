@@ -1,6 +1,7 @@
 package com.MyEventFinder.controller;
 
 import com.MyEventFinder.model.DTO.EntertainmentDTO;
+import com.MyEventFinder.model.entity.Entertainment;
 import com.MyEventFinder.service.EntertainmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/entertainment")
 @RequiredArgsConstructor
-public class EntertainmentController {
+public class EntertainmentController{
     private final EntertainmentService entertainmentService;
 
     @RequestMapping(path = "/", method = RequestMethod.GET)

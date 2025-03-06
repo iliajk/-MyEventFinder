@@ -36,9 +36,6 @@ public class EntertainmentService {
 
     public ResponseEntity<?> createEntertainment(EntertainmentDTO entDTO) {
         Entertainment newEnt;
-        if (entDTO == null) {
-            return ResponseEntity.badRequest().body("Entertainment cannot be null!");
-        }
         try {
             newEnt = createNewEntertainment(entDTO);
         } catch (RuntimeException runtimeException) {
@@ -59,7 +56,13 @@ public class EntertainmentService {
 
     public ResponseEntity<?> updateEntertainment(Long id, EntertainmentDTO dto) {
         Entertainment existingEnt = entRepo.findById(id).orElse(null);
-        if (existingEnt != null && dto != null) {
+        if (existingEnt != null && dto != null && !existingEnt.getDeleted()) {
+            EntertainmentType type = entTypeRepo.findById(dto.getTypeId()).orElse(null);
+            List<Entertainment> allEnt = new ArrayList<>();
+            if (type != null) {
+                existingEnt.setType(type);
+                allEnt = type.getEntertainments();
+            }
             if (dto.getTitle() != null && !dto.getTitle().isEmpty()) {
                 existingEnt.setTitle(dto.getTitle());
             }
@@ -81,6 +84,9 @@ public class EntertainmentService {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(runtimeException.getMessage());
             }
             existingEnt = entRepo.save(existingEnt);
+            allEnt.add(existingEnt);
+            type.setEntertainments(allEnt);
+            entTypeRepo.save(type);
             return ResponseEntity.ok().body(toDTO(existingEnt));
         } else {
             return ResponseEntity.badRequest().body("Entertainment not found");
@@ -89,14 +95,15 @@ public class EntertainmentService {
 
     public ResponseEntity<?> deleteEntertainment(Long id) {
         Entertainment existingEnt = entRepo.findById(id).orElse(null);
-        if (existingEnt != null) {
+        if (existingEnt != null && !existingEnt.getDeleted()) {
             existingEnt.setDeleted(true);
             existingEnt.setDeleted_at(LocalDateTime.now());
             entRepo.save(existingEnt);
             return ResponseEntity.ok().body("Entertainment with id = " + id + " was deleted");
         }
-        return ResponseEntity.badRequest().body("Entertainment not found");
+        return ResponseEntity.badRequest().body("Entertainment not found or already deleted");
     }
+
     // transfer from Entertainment to Dto
     private EntertainmentDTO toDTO(Entertainment entity) {
         if (entity != null) {
@@ -111,9 +118,10 @@ public class EntertainmentService {
         }
         return null;
     }
+
     // create entertainment from DTO
     private Entertainment createNewEntertainment(EntertainmentDTO dto) throws RuntimeException {
-        if(dto != null) {
+        if (dto != null) {
             EntertainmentType type = null;
             Location location = null;
             List<User> executors = null;
@@ -124,16 +132,16 @@ public class EntertainmentService {
             Long customerId = dto.getCustomerId();
             Long[] executorIds = dto.getExecutorIds();
 
-            if(typeId != null) {
+            if (typeId != null) {
                 type = entTypeRepo.findById(typeId).orElse(null);
             }
-            if(locationId != null) {
+            if (locationId != null) {
                 location = locationRepo.findById(locationId).orElse(null);
             }
-            if(customerId != null) {
+            if (customerId != null) {
                 customer = userRepo.findById(customerId).orElse(null);
             }
-            if(executorIds != null) {
+            if (executorIds != null) {
                 executors = new ArrayList<>(userRepo.findAllById(Stream.of(executorIds).toList()));
             }
             try {

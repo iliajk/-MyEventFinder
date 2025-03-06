@@ -8,5 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EntertainmentTypeDTO {
-
+    private Long id;
+    private String title;
+    private String description;
 }
