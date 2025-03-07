@@ -5,11 +5,13 @@ import com.MyEventFinder.model.entity.Entertainment;
 import com.MyEventFinder.model.entity.EntertainmentType;
 import com.MyEventFinder.model.entity.Location;
 import com.MyEventFinder.model.entity.User;
+import com.MyEventFinder.model.specifications.EntertainmentSpecification;
 import com.MyEventFinder.repository.EntertainmentRepository;
 import com.MyEventFinder.repository.EntertainmentTypeRepository;
 import com.MyEventFinder.repository.LocationRepository;
 import com.MyEventFinder.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -29,9 +31,18 @@ public class EntertainmentService {
     private final LocationRepository locationRepo;
     private final UserRepository userRepo;
 
-    public ResponseEntity<?> getAllEntertainments() {
-        List<Entertainment> ents = entRepo.getAllByDeleted(false);
-        return ResponseEntity.ok().body(ents);
+    public ResponseEntity<?> getAllEntertainments(Long typeId, String location, Long maxPrice) {
+        BigDecimal maxPriceBigDecimal = null;
+        if(maxPrice != null){
+             maxPriceBigDecimal = new BigDecimal(maxPrice);
+        }
+        Specification<Entertainment> spec = Specification
+                .where(EntertainmentSpecification.hasType(typeId))
+                .and(EntertainmentSpecification.hasLocation(location))
+                .and(EntertainmentSpecification.hasPriceLessThenOrEqual(maxPriceBigDecimal))
+                .and(EntertainmentSpecification.hasDeleted(false));
+        List<EntertainmentDTO> dtos = entRepo.findAll(spec).stream().map(this::toDTO).toList();
+        return ResponseEntity.ok().body(dtos);
     }
 
     public ResponseEntity<?> createEntertainment(EntertainmentDTO entDTO) {
@@ -114,6 +125,8 @@ public class EntertainmentService {
                     .price(entity.getPrice().toString())
                     .currency(entity.getCurrency().toString())
                     .date(entity.getDate().toString())
+                    .typeId(entity.getType().getId())
+                    .locationId(entity.getLocation().getId())
                     .build();
         }
         return null;

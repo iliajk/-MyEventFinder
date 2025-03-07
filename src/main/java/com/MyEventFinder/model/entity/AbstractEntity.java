@@ -9,5 +9,5 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 public abstract class AbstractEntity {
     protected Boolean deleted = Boolean.FALSE;
-    protected LocalDateTime deleted_at = LocalDateTime.now();
+    protected LocalDateTime deleted_at = null;
 }

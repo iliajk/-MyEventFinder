@@ -3,6 +3,7 @@ package com.MyEventFinder.controller;
 import com.MyEventFinder.model.DTO.EntertainmentDTO;
 import com.MyEventFinder.model.entity.Entertainment;
 import com.MyEventFinder.service.EntertainmentService;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +15,10 @@ public class EntertainmentController{
     private final EntertainmentService entertainmentService;
 
     @RequestMapping(path = "/", method = RequestMethod.GET)
-    public ResponseEntity<?> getAllEntertainments() {
-        return entertainmentService.getAllEntertainments();
+    public ResponseEntity<?> getAllEntertainments(@RequestParam @Nullable Long typeId,
+                                                  @RequestParam @Nullable String location,
+                                                  @RequestParam @Nullable Long max) {
+        return entertainmentService.getAllEntertainments(typeId, location, max);
     }
 
     @RequestMapping(path = "/", method = RequestMethod.POST)
